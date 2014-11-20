@@ -1,48 +1,46 @@
-;; DEFINICIÓN DE RAZAS
+;; DEFINICIÓN DE LA RAZA HORMIGA
 breed [hormigas hormiga] ;; definimos el agente hormiga
 
-patches-own [n_feromonas]
+patches-own [n_feromonas] ;; definimos atributo feremonas
 
 ;; PROCEDIMIENTOS
-to comenzar
+to inicio
     ca ;; clear-all
     
-    set-default-shape hormigas "ant" ;; establecemos una forma por defecto para el tipo de agente "coche"
-
+    set-default-shape hormigas "ant" ;; forma de "ant" para el agente hormiga
+    
     create-hormigas n_hormigas [set color white setxy random-pxcor random-pycor];; creamos 20 hormigas
     
 end
 
 to go
     
-    ask hormigas [movimiento_hormigas]
+    movimiento_hormigas
     
     diffuse n_feromonas 1
     
-    ask patches [set n_feromonas n_feromonas * 0.9 set pcolor scale-color blue n_feromonas 0 n_hormigas]
+    ask patches [set n_feromonas n_feromonas * 0.9 set pcolor scale-color blue n_feromonas 0 ]
   
 end
+
 
 to movimiento_hormigas
   
-  comportamiento
-  
-  let n_hor count(hormigas)
-  
-  let list_hormigas n-values n_hor [?]
+  let list_hormigas n-values count(hormigas) [?]
   
   foreach list_hormigas
-  [
+  [    
+    
+    ask hormiga ? [comportamiento]
     
     ask patch [xcor] of hormiga ? [ycor] of hormiga ? [ set n_feromonas n_feromonas + 2]
     
+    ask hormiga ? [fd 1]
+    
   ]
-  
-  ask hormigas [fd 1]
-   
-
  
 end
+
 
 to comportamiento
   
@@ -52,58 +50,58 @@ to comportamiento
   
   if (R > L) AND (R > F)
   [
-   
-   ask hormigas [set heading heading + 45]
     
-   ]
+    set heading heading + 45
+    
+  ]
    
   if (L > R) AND (L > F)
   [
-     
-     ask hormigas [set heading heading - 45]
-     
-   ]
+    
+    set heading heading - 45
+    
+  ]
    
   if (R = L) AND (R > F)
   [
-     
-     ask hormigas [set heading heading + one-of[-45 45]]
-     
-    ]
+    
+    set heading heading + one-of[-45 45]
+    
+  ]
   
   if (R = F) AND (R > L)
   [
-     
-     ask hormigas [set heading heading + one-of[45 0]]
-     
-    ]
+    
+    set heading heading + one-of[45 0]
+    
+  ]
   
   
   if (F = L) AND (F > R)
   [
-     
-     ask hormigas [set heading heading + one-of[-45 0]]
-     
-    ]
+    
+    set heading heading + one-of[-45 0]
+    
+  ]
   
   if (R = F) AND (F = L)
   [
-     
-     ask hormigas [set heading heading + one-of[-45 45 0]]
-     
-    ]
+    
+    set heading heading + one-of[-45 45 0]
+    
+  ]
    
   
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-1038
-59
-1477
-519
-16
-16
-13.0
+614
+24
+1188
+619
+-1
+-1
+11.06
 1
 10
 1
@@ -113,10 +111,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+0
+50
+0
+50
 0
 0
 1
@@ -132,19 +130,19 @@ n_hormigas
 n_hormigas
 0
 100
-34
+50
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-84
-33
-169
-66
+100
+13
+185
+46
 NIL
-comenzar
+inicio
 NIL
 1
 T
@@ -156,10 +154,10 @@ NIL
 1
 
 BUTTON
-261
-62
-324
-95
+113
+57
+176
+90
 NIL
 go
 T
