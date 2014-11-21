@@ -10,6 +10,9 @@ to setup
     ;; clear-all
     ca
     
+    ;; reinicia los ticks
+    reset-ticks
+    
     ;; forma de "ant" para el agente hormiga
     set-default-shape hormigas "ant"
     
@@ -20,6 +23,8 @@ end
 
 to go
     
+    ;; suma un tick
+    tick
     ;; llama al procedimiento que define el comportamiento de las hormigas
     movimiento_hormigas 
     
@@ -90,11 +95,11 @@ end
 GRAPHICS-WINDOW
 278
 19
-784
-546
+593
+355
 -1
 -1
-13.41
+8.243243243243244
 1
 10
 1
