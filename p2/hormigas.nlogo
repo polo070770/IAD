@@ -1,41 +1,54 @@
-;; DEFINICIÓN DE LA RAZA HORMIGA
-breed [hormigas hormiga] ;; definimos el agente hormiga
+;; definimos la raza hormiga
+breed [hormigas hormiga] 
 
-patches-own [n_feromonas] ;; definimos atributo feremonas
+;; definimos atributo feremonas
+patches-own [n_feromonas]
 
 ;; PROCEDIMIENTOS
 to inicio
-    ca ;; clear-all
+  
+    ;; clear-all
+    ca
     
-    set-default-shape hormigas "ant" ;; forma de "ant" para el agente hormiga
+    ;; forma de "ant" para el agente hormiga
+    set-default-shape hormigas "ant"
     
-    create-hormigas n_hormigas [set color white setxy random-pxcor random-pycor];; creamos 20 hormigas
+    ;; creamos las hormigas
+    create-hormigas n_hormigas [set color green setxy random-pxcor random-pycor]
     
 end
 
 to go
     
-    movimiento_hormigas
+    ;; llama al procedimiento que define el comportamiento de las hormigas
+    movimiento_hormigas 
     
+    ;; en cada iteracion, las feromonas de difunden a su alrededor
     diffuse n_feromonas 1
-    
-    ask patches [set n_feromonas n_feromonas * 0.9 set pcolor scale-color blue n_feromonas 0 ]
+   
+    ;; en cada iteracion, las casillas pierden un 10% de sus feromonas
+    ask patches [set n_feromonas n_feromonas * 0.9f set pcolor scale-color blue n_feromonas 0 10]
   
 end
 
 
 to movimiento_hormigas
   
+  ;; cogemos el listado de hormigas existentes
   let list_hormigas n-values count(hormigas) [?]
   
+  ;; hacemos un bucle que ejecuta cada hormiga
   foreach list_hormigas
   [    
     
+    ;; la hormiga llama a la funcion que comprueba las feromonas de las casillas que tiene delante
     ask hormiga ? [comportamiento]
     
-    ask patch [xcor] of hormiga ? [ycor] of hormiga ? [ set n_feromonas n_feromonas + 2]
-    
+    ;; la hormiga avanza una casilla
     ask hormiga ? [fd 1]
+    
+    ;; la hormiga deja 2 feromonas en la casilla que esta
+    ask patch [xcor] of hormiga ? [ycor] of hormiga ? [ set n_feromonas (n_feromonas + 2)]
     
   ]
  
@@ -44,64 +57,54 @@ end
 
 to comportamiento
   
+  ;; se coge la cantidad de feromonas de las casillas de delante
   let F [n_feromonas] of patch-ahead 1
-  let L [n_feromonas] of patch-left-and-ahead 1 1
-  let R [n_feromonas] of patch-right-and-ahead 1 1
+  let L [n_feromonas] of patch-left-and-ahead 45 3
+  let R [n_feromonas] of patch-right-and-ahead 45 3
+  
+  ;; se comparan las cantidades para definir hacia la casilla que mirara la hormiga
   
   if (R > L) AND (R > F)
   [
-    
     set heading heading + 45
-    
   ]
    
   if (L > R) AND (L > F)
   [
-    
     set heading heading - 45
-    
   ]
    
   if (R = L) AND (R > F)
   [
-    
     set heading heading + one-of[-45 45]
-    
   ]
   
   if (R = F) AND (R > L)
   [
-    
     set heading heading + one-of[45 0]
-    
   ]
-  
   
   if (F = L) AND (F > R)
   [
-    
     set heading heading + one-of[-45 0]
-    
   ]
   
   if (R = F) AND (F = L)
   [
-    
-    set heading heading + one-of[-45 45 0]
-    
+    set heading heading + one-of[-45 45 0]   
   ]
    
   
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-614
-24
-1188
-619
+278
+19
+523
+272
 -1
 -1
-11.06
+6.0
 1
 10
 1
@@ -112,9 +115,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-50
+36
 0
-50
+36
 0
 0
 1
@@ -129,8 +132,8 @@ SLIDER
 n_hormigas
 n_hormigas
 0
-100
-50
+250
+150
 1
 1
 NIL
