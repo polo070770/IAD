@@ -5,7 +5,7 @@ breed [hormigas hormiga]
 patches-own [n_feromonas]
 
 ;; PROCEDIMIENTOS
-to inicio
+to setup
   
     ;; clear-all
     ca
@@ -34,24 +34,15 @@ end
 
 to movimiento_hormigas
   
-  ;; cogemos el listado de hormigas existentes
-  let list_hormigas n-values count(hormigas) [?]
-  
-  ;; hacemos un bucle que ejecuta cada hormiga
-  foreach list_hormigas
-  [    
-    
-    ;; la hormiga llama a la funcion que comprueba las feromonas de las casillas que tiene delante
-    ask hormiga ? [comportamiento]
-    
-    ;; la hormiga avanza una casilla
-    ask hormiga ? [fd 1]
-    
-    ;; la hormiga deja 2 feromonas en la casilla que esta
-    ask patch [xcor] of hormiga ? [ycor] of hormiga ? [ set n_feromonas (n_feromonas + 2)]
-    
-  ]
- 
+    ask hormigas [
+      ;; la hormiga llama a la funcion que comprueba las feromonas de las casillas que tiene delante
+      comportamiento 
+      ;; la hormiga avanza una casilla
+      fd 1 
+      ;; la hormiga deja 2 feromonas en la casilla que esta
+      ask patch-here [ set n_feromonas (n_feromonas + 2)]
+      ]
+     
 end
 
 
@@ -93,18 +84,17 @@ to comportamiento
   [
     set heading heading + one-of[-45 45 0]   
   ]
-   
   
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 278
 19
-523
-272
+784
+546
 -1
 -1
-6.0
+13.41
 1
 10
 1
@@ -145,7 +135,7 @@ BUTTON
 185
 46
 NIL
-inicio
+setup
 NIL
 1
 T
@@ -159,7 +149,7 @@ NIL
 BUTTON
 113
 57
-176
+186
 90
 NIL
 go
