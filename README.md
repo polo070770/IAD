@@ -1,4 +1,4 @@
 IAD
 ===
 
-Inteligencia Articial Distribuida
+Inteligencia Artificial Distribuida
