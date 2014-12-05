@@ -1,0 +1,143 @@
+FROM: https://groups.yahoo.com/neo/groups/netlogo-users/conversations/topics/5436) para paso de mensajes:
+                James Steiner (message 5 de 15, Dec 19) 
+
+Ok, just for clarity, lets start with the simplest method.
+
+If we ahve turtle A and turtle B, turtle A can access or change any
+variable of turtle B using the -of function:
+
+;; assume a and b are turtles, or variables that contain (point
+to/refer to) turtles.
+ask a
+[ ;; make turtle a same color as b
+set color color-of b
+]
+
+ask a
+[ ;; make b same color as a
+set color-of turtle-b color
+]
+
+Now, directly getting and setting variables is not the same as message
+passing, because it does not allow the recipient to choose how it
+want's to process messages, but we can use directly setting variables
+as a way to pass messages, by setting the other turtles message
+variable.
+
+==========
+So, lets try using a turtle variable as a recepticle for messages put
+there by other turtles:
+
+(note: "message" is a primitive that displays a message to the user in
+a dialog box, so we can't use "message" as a variable name or breed,
+or anything)
+
+If turtles-own a variable called "mess", then turtle A could "send"
+turtle B a message like this:
+
+ask a
+[ set mess-of b "some message"
+]
+
+Then turtle b can process the message:
+
+ask b
+[ if mess != ""
+[ ;;non-blank means there's a message
+process-message
+;; clear the message
+set mess ""
+]
+]
+
+Of course, the messages don't have to be strings, they could be
+numbers or anything else. Maybe they are numbers that correspond to
+reponses in a message table. Could be anything.
+
+If many turtles are sending messages, then each turtle may need its
+own message queue. You could use a list to store many messages.
+
+All the following examples are code that is run by a turtle
+
+;; add a message to the end of another turtle's message queue
+;; assumes turtles-own [ messages ]
+;; assumes messages contains a list, or has been initialized to the
+empty list ( [ ] )
+;; assumes B is a variable that contains (refers to) a turtle
+set messages-of b lput "some message" messages-of b
+
+;; process messages in the queue
+foreach messages
+[ let a-message ? ;; see foreach syntax in prim. dictionary to explain
+the ? mark
+process-message a-message
+]
+;; clear messages
+set messages []
+
+You could process messages one at a time, if needed:
+
+;; each turn, process only ONE message
+;; process the first message
+process-message first messages
+;; delete the first message
+set messages but-first messages
+
+========================
+
+Another way to do messages is to use message turtles.
+
+;; breeds for this example
+breed [ messages a-message ]
+breed [ nodes node ]
+
+;; message turtles need some variables to be useful
+messages-own
+[ sender ;; node that generated/sent the message
+recipient ;; node that is intended to read the message
+timestamp ;; when the message was sent
+content ;; the content of the message
+]
+
+;; how to send a message
+;; run by a turtle
+;; send a message to a random other node
+let R one-of nodes with [ self != myself ]
+let C "some message"
+hatch 1
+[ set breed messages
+set sender myself
+set recipient R
+set content C
+]
+
+
+;; how to check for messages
+;; (this code run by a node)
+;; get set of message turtles that have this turtle as the recipient
+let my-messages messages with [ recipient = myself ]
+;; if there are any message turtles for this turtle...
+if any? my-messages
+[ ;; ... process messages
+;; e.g.
+;; get only the last message, discard the rest
+let last-message max-one-of my-messages [ timestamp ]
+process-message last-message
+;; delete all messages, once processed
+ask my-messages [ die ]
+]
+
+=====
+Of course, you can make messages that have spatial componets, too. For
+example, a turtle could "leave" a message in a patch, by setting a
+variable in the patch, that another turtle can "recieve" when it steps
+on that patch. Or message turtles could be "passed" from sender to
+attached nodes in a network, then passed from node to node until
+reaching the recipient.
+
+So, I hope that gives you some ideas for how to implement whatever
+kind of inter-turtle communication you need to do!
+
+~~James
+http://www.turtlezero.com
+(JA-86)
