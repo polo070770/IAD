@@ -12,8 +12,8 @@ to setup
   set-default-shape mercados "building institution"
   set-default-shape personas "person"
   
-  create-personas 25 [set color green setxy random-pxcor random-pycor set rol "comprador" set ocupado false]
-  create-personas 25 [set color blue setxy random-pxcor random-pycor set rol "vendedor" set ocupado false]
+  create-personas 5 [set color green setxy random-pxcor random-pycor set rol "comprador" set ocupado false]
+  create-personas 5 [set color blue setxy random-pxcor random-pycor set rol "vendedor" set ocupado false]
   create-mercados 1 [set color white]
   
 end
@@ -27,8 +27,10 @@ to go
   
     if (ocupado = false)
     [
-      fd 1 set heading heading + one-of[-10 10]
-      if (count personas-here > 1) AND (count personas-here < 3)
+      fd 1
+      set heading heading + one-of[-10 10]
+      
+      if (count personas-here == 2)
       [
         set ocupado true
        ]
