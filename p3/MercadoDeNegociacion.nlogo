@@ -1,7 +1,8 @@
 breed [personas persona]
 breed [mercados mercado]
 
-personas-own [rol ocupado]
+personas-own [rol ocupado interesado mensaje]
+
 
 to setup
   
@@ -12,10 +13,35 @@ to setup
   set-default-shape mercados "building institution"
   set-default-shape personas "person"
   
-  create-personas 5 [set color green setxy random-pxcor random-pycor set rol "comprador" set ocupado false]
-  create-personas 5 [set color blue setxy random-pxcor random-pycor set rol "vendedor" set ocupado false]
+  create-personas 25 [set color green setxy random-pxcor random-pycor set rol "comprador" set ocupado false set mensaje ""]
+  create-personas 25 [set color blue setxy random-pxcor random-pycor set rol "vendedor" set ocupado false set mensaje ""]
   create-mercados 1 [set color white]
   
+end
+
+
+to move
+  if not ocupado
+    [
+      rt random-float 360
+      fd 1
+    ]
+end
+
+
+to couples
+  if ocupado = false
+    [
+      set interesado one-of (personas-at -1 0)
+      if (interesado != NOBODY) and ([ocupado] of interesado = false) and ([rol] of interesado != rol)
+      [
+        set ocupado true
+        ask interesado [set ocupado true]
+        
+        move-to patch-here
+        ask interesado [move-to patch-here]
+      ]
+    ]
 end
 
 
@@ -23,18 +49,12 @@ to go
   
   tick
   
-  ask personas [
-  
-    if (ocupado = false)
-    [
-      fd 1
-      set heading heading + one-of[-10 10]
-      
-      if (count personas-here == 2)
-      [
-        set ocupado true
-       ]
-    ]
+  ask personas 
+  [
+
+    move
+    
+    couples
     
   ]
     
