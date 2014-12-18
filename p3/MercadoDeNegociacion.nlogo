@@ -10,11 +10,15 @@ personas-own [
   ;condiciones iniciales para el comprador
   precio-compra-ideal 
   precio-compra-permitida
+  precio-compra
   
   ;condiciones iniciales para el vendedor
   precio-venta-ideal
   precio-venta-permitida
+  precio-venta
   ]
+
+mercados-own [dinero]
 
 
 to setup
@@ -35,9 +39,10 @@ to setup
     set mensaje "" 
     set precio-compra-ideal 20
     set precio-compra-permitida 35 
+    set precio-compra 0
     ]
   
-  create-personas 2 
+  create-personas 2
   [
     set color blue 
     setxy random-pxcor random-pycor 
@@ -46,10 +51,12 @@ to setup
     set mensaje "" 
     set precio-venta-ideal 40
     set precio-venta-permitida 25
+    set precio-venta 0
     ]
 
   create-mercados 1 [
-    set color white
+    set color red
+    set size 2
     ]
   
 end
@@ -83,11 +90,13 @@ end
 
 to razona-interesado-vendedor
   
-  if (mensaje = "hola vendedor")
+  if (mensaje = "INIT")
   [
-    print "hola comprador soy vendedor"
-    ask interesado [ set mensaje "hola comprador"]
-    
+    ask interesado [ set mensaje "SUBE"]
+  ]
+  if (mensaje = "SUBO") and (precio-venta >= precio-venta-ideal)
+  [
+    ask interesado [ set mensaje "ACEPTAR/RECHAZAR" ] 
   ]
   
 end
@@ -115,14 +124,16 @@ to negotiation
   ifelse (rol = "comprador") AND (flip = 0)
   [
     ;Inicia la negociacion el comprador
+    ask interesado [ set mensaje "INIT" set precio-venta precio-compra-ideal]
+    ask interesado [ razona-interesado-vendedor ]
     
     while[continua-negocio]
     [
       
-      print "hola vendedor soy comprador"
-      
-      ask interesado [ set mensaje "hola vendedor" ]
-      ask interesado [ razona-interesado-vendedor ]
+      if mensaje = "SUBE"
+      [
+         ask interesado [ set mensaje "SUBO" set precio-venta precio-compra + random 3]
+      ]
       
       set continua-negocio false
       
@@ -135,8 +146,6 @@ to negotiation
     while[continua-negocio]
     [
       
-      print "hola comprador soy vendedor"
-      
       ask interesado [ set mensaje "hola comprador" ]
       ask interesado [ razona-interesado-comprador ]
       
@@ -145,6 +154,12 @@ to negotiation
     ]
     
   ] 
+  
+  ; Vuelvo a poner las variables con su estado inicial
+  set ocupado false
+  ask interesado [ set ocupado false ]
+  set mensaje ""
+  ask interesado [ set mensaje "" ]
   
   
 end
