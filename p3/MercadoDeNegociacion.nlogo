@@ -1,7 +1,20 @@
 breed [personas persona]
 breed [mercados mercado]
 
-personas-own [rol ocupado interesado mensaje]
+personas-own [
+  rol 
+  ocupado 
+  interesado 
+  mensaje 
+
+  ;condiciones iniciales para el comprador
+  precio-compra-ideal 
+  precio-compra-permitida
+  
+  ;condiciones iniciales para el vendedor
+  precio-venta-ideal
+  precio-venta-permitida
+  ]
 
 
 to setup
@@ -13,9 +26,31 @@ to setup
   set-default-shape mercados "building institution"
   set-default-shape personas "person"
   
-  create-personas 25 [set color green setxy random-pxcor random-pycor set rol "comprador" set ocupado false set mensaje ""]
-  create-personas 25 [set color blue setxy random-pxcor random-pycor set rol "vendedor" set ocupado false set mensaje ""]
-  create-mercados 1 [set color white]
+  create-personas 2 
+  [
+    set color green
+    setxy random-pxcor random-pycor
+    set rol "comprador"
+    set ocupado false 
+    set mensaje "" 
+    set precio-compra-ideal 20
+    set precio-compra-permitida 35 
+    ]
+  
+  create-personas 2 
+  [
+    set color blue 
+    setxy random-pxcor random-pycor 
+    set rol "vendedor" 
+    set ocupado false 
+    set mensaje "" 
+    set precio-venta-ideal 40
+    set precio-venta-permitida 25
+    ]
+
+  create-mercados 1 [
+    set color white
+    ]
   
 end
 
@@ -36,12 +71,82 @@ to couples
       if (interesado != NOBODY) and ([ocupado] of interesado = false) and ([rol] of interesado != rol)
       [
         set ocupado true
-        ask interesado [set ocupado true]
+        ask interesado [set ocupado true set interesado myself]
         
         move-to patch-here
         ask interesado [move-to patch-here]
+        negotiation
       ]
     ]
+end
+
+
+to razona-interesado-vendedor
+  
+  if (mensaje = "hola vendedor")
+  [
+    print "hola comprador soy vendedor"
+    ask interesado [ set mensaje "hola comprador"]
+    
+  ]
+  
+end
+
+
+to razona-interesado-comprador
+  
+  if (mensaje = "hola comprador")
+  [
+    print "hola vendedor soy comprador"
+    ask interesado [ set mensaje "hola vendedor"]
+    
+  ]
+  
+  
+end
+
+
+to negotiation
+  
+  let continua-negocio true
+  
+  let flip random 2
+  
+  ifelse (rol = "comprador") AND (flip = 0)
+  [
+    ;Inicia la negociacion el comprador
+    
+    while[continua-negocio]
+    [
+      
+      print "hola vendedor soy comprador"
+      
+      ask interesado [ set mensaje "hola vendedor" ]
+      ask interesado [ razona-interesado-vendedor ]
+      
+      set continua-negocio false
+      
+    ]
+    
+  ]
+  [
+    ;Inicia la negociacion el vendedor
+    
+    while[continua-negocio]
+    [
+      
+      print "hola comprador soy vendedor"
+      
+      ask interesado [ set mensaje "hola comprador" ]
+      ask interesado [ razona-interesado-comprador ]
+      
+      set continua-negocio false
+      
+    ]
+    
+  ] 
+  
+  
 end
 
 
