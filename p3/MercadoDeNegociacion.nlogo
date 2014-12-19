@@ -1,3 +1,5 @@
+globals [ n_tratos n_rechazos gasto-comprador beneficio-vendedor ]
+
 breed [personas persona]
 breed [mercados mercado]
 
@@ -18,7 +20,10 @@ personas-own [
   precio-venta
   ]
 
-mercados-own [dinero]
+mercados-own [
+  parte-fija 
+  acumulado
+  ]
 
 
 to setup
@@ -30,7 +35,12 @@ to setup
   set-default-shape mercados "building institution"
   set-default-shape personas "person"
   
-  create-personas 2 
+  set n_tratos 0
+  set n_rechazos 0
+  set gasto-comprador 0
+  set beneficio-vendedor 0
+  
+  create-personas 1 
   [
     set color green
     setxy random-pxcor random-pycor
@@ -42,7 +52,7 @@ to setup
     set precio-compra 0
     ]
   
-  create-personas 2
+  create-personas 1
   [
     set color blue 
     setxy random-pxcor random-pycor 
@@ -57,17 +67,320 @@ to setup
   create-mercados 1 [
     set color red
     set size 2
+    set parte-fija 2
+    set acumulado 0
     ]
   
 end
 
 
-to move
-  if not ocupado
+to comprador-razona-precio
+  
+  if ( precio-compra >= precio-compra-permitida )
+  [
+   
+    let coin-flip random 3
+    
+    ifelse ( coin-flip = 2 )
     [
-      rt random-float 360
-      fd 1
+      
+      ; probabilidad 0.25 de seguir interesado en el producto
+      ; y le pide al vendedor que baje el precio
+      ask interesado [ set mensaje "BAJA" ]
+      
     ]
+    [
+      
+      ; probabilidad 0.75 de perder interes en comprar el producto
+      ; al vendedor
+      ask interesado [ set mensaje "RECHAZAR" ]  
+      
+    ]
+    
+  ]
+  
+  if ( precio-compra >= precio-compra-ideal ) AND 
+  (precio-compra < precio-compra-permitida )
+  [
+    
+    let coin-flip random 2
+    
+    ifelse ( coin-flip = 2 )
+    [
+      
+      ; probabilidad 0.5 de aceptar la oferta del vendedor
+      ask interesado [ set mensaje "ACEPTAR" ]
+      
+    ]
+    [
+      
+      ; probabilidad 0.5 de pedirle al vendedor que siga
+      ; bajando la oferta
+      ask interesado [ set mensaje "BAJA" ]
+    
+    ]
+     
+  ]
+  
+  if ( precio-compra < precio-compra-ideal )
+  [
+    
+    let coin-flip random 3
+    
+    ifelse ( coin-flip = 2 )
+    [
+      ; probabilidad 0.25 de pedirle al vendedor que siga
+      ; bajando la oferta
+      ask interesado [ set mensaje "BAJA" ]
+      
+    ]
+    [
+      
+      ; probabilidad 0.75 de aceptar la oferta del vendedor
+      ask interesado [ set mensaje "ACEPTAR" ]
+      
+    ]
+    
+  ]
+  
+  
+end
+
+
+to vendedor-razona-precio
+  
+  if ( precio-venta <= precio-venta-permitida )
+  [
+    
+    let coin-flip random 3
+    
+    ifelse ( coin-flip = 2 )
+    [
+      
+      ; probabilidad 0.25 de seguir interesado
+      ; en vender el producto y pedirle al comprado que suba
+      ; el precio.
+      ask interesado [ set mensaje "SUBE" ]      
+      
+    ]
+    [
+      
+      ; probabilidad 0.75 de perder interes en venderle el producto
+      ; al comprador
+      ask interesado [ set mensaje "RECHAZAR" ]
+      
+    ]
+    
+  ]
+  
+  if ( precio-venta > precio-venta-permitida ) AND 
+  (precio-venta <= precio-venta-ideal )
+  [
+    
+    let coin-flip random 2
+    
+    ifelse ( coin-flip = 2 )
+    [
+      
+      ; probabilidad 0.5 de aceptar la oferta del comprador
+      ask interesado [ set mensaje "ACEPTAR" ]      
+      
+    ]
+    [
+      
+      ; probabilidad 0.5 de pedirle al comprador que siga
+      ; subiendo la oferta
+      ask interesado [ set mensaje "SUBE" ]
+    
+    ]
+     
+  ]
+  
+  if ( precio-venta > precio-venta-ideal )
+  [
+    
+    let coin-flip random 3
+    
+    ifelse ( coin-flip = 2 )
+    [
+      ; probabilidad 0.25 de pedirle al comprador que siga
+      ; subiendo la oferta
+      ask interesado [ set mensaje "SUBE" ]      
+      
+    ]
+    [
+      
+      ; probabilidad 0.75 de aceptar la oferta del comprador 
+      ask interesado [ set mensaje "ACEPTAR" ]
+      
+    ]
+    
+  ]
+  
+end
+
+
+to negotiation
+  
+  let continua-negocio true
+  
+  let coin-flip random 2
+  
+  ifelse (rol = "comprador") AND (coin-flip = 0)
+  [
+    
+    ;Inicia la negociacion el comprador
+    set precio-compra precio-compra-ideal
+    
+    ask interesado [ set precio-venta precio-compra ]
+    ask interesado [ vendedor-razona-precio ]
+    
+    while[continua-negocio]
+    [
+      
+      if ( mensaje = "SUBE" )
+      [
+        
+        set coin-flip random 2
+        
+        ifelse ( coin-flip = 0 AND [precio-venta] of interesado < precio-compra-permitida )
+        [
+          
+          print "++ Comprador acepta subir el precio"
+          
+          ask interesado [ set precio-venta precio-venta + random 3 ]
+          ask interesado [ vendedor-razona-precio ]
+          
+        ]
+        [
+          
+          print "++ Comprador rechaza subir el precio"
+          
+          set n_rechazos n_rechazos + 1
+          
+          set continua-negocio false
+          
+        ]
+        
+      ]
+      
+      if ( mensaje = "ACEPTAR" )
+      [
+        
+        print "++ Vendedor acepta negocio con comprador"
+
+        set n_tratos n_tratos + 1
+        
+        let interes [precio-venta] of interesado
+        set interes interes / 100
+        print interes
+        
+        ask mercados [ set acumulado ( parte-fija + interes ) ]
+        
+        set gasto-comprador (gasto-comprador + [precio-venta] of interesado )
+        
+        set continua-negocio false
+        
+      ]
+      
+      if ( mensaje = "RECHAZAR" )
+      [
+        
+        print "++ Vendedor rechaza negocio con comprador"
+        
+        set n_rechazos n_rechazos + 1
+        
+        set continua-negocio false
+        
+      ] 
+      
+    ]
+    
+  ]
+  [
+    
+    ;Inicia la negociacion el vendedor
+    set precio-venta precio-venta-ideal
+    
+    ask interesado [ set precio-compra precio-venta ]
+    ask interesado [ comprador-razona-precio ]
+    
+    while[continua-negocio]
+    [
+      
+      if ( mensaje = "BAJA" )
+      [
+        
+        set coin-flip random 2
+        
+        ifelse ( coin-flip = 0 AND [precio-compra] of interesado > precio-venta-permitida )
+        [
+          
+          print "-- Vendedor acepta bajar el precio"
+          
+          ask interesado [ set precio-compra precio-compra - random 3 ]
+          ask interesado [ comprador-razona-precio ]
+          
+        ]
+        [
+          
+          print "-- Vendedor rechaza bajar el precio"
+          
+          set n_rechazos n_rechazos + 1
+          
+          set continua-negocio false
+          
+        ]
+        
+      ]
+      
+      if ( mensaje = "ACEPTAR" )
+      [
+       
+        print "-- Comprador acepta negocio con vendedor"
+        
+        set n_tratos n_tratos + 1
+        
+        let interes [precio-compra] of interesado
+        set interes  interes / 100
+        ;print interes
+        
+        ask mercados [ set acumulado (parte-fija + interes) ]
+        
+        set beneficio-vendedor ( beneficio-vendedor + [precio-compra] of interesado )
+
+        set continua-negocio false
+        
+      ]
+      
+      if ( mensaje = "RECHAZAR" )
+      [
+        
+        print "-- Comprador rechaza negocio con vendedor"
+        
+        set n_rechazos n_rechazos + 1
+        
+        set continua-negocio false
+        
+      ]
+      
+    ]
+    
+  ] 
+  
+  ; Las variables vuelven a su estado inicial
+  set ocupado false
+  ask interesado [ set ocupado false ]
+  
+  set mensaje ""
+  ask interesado [ set mensaje "" ]
+  
+  set precio-compra 0
+  ask interesado [ set precio-compra 0 ]
+  
+  set precio-venta 0
+  ask interesado [ set precio-venta 0 ]
+  
 end
 
 
@@ -88,80 +401,12 @@ to couples
 end
 
 
-to razona-interesado-vendedor
-  
-  if (mensaje = "INIT")
-  [
-    ask interesado [ set mensaje "SUBE"]
-  ]
-  if (mensaje = "SUBO") and (precio-venta >= precio-venta-ideal)
-  [
-    ask interesado [ set mensaje "ACEPTAR/RECHAZAR" ] 
-  ]
-  
-end
-
-
-to razona-interesado-comprador
-  
-  if (mensaje = "hola comprador")
-  [
-    print "hola vendedor soy comprador"
-    ask interesado [ set mensaje "hola vendedor"]
-    
-  ]
-  
-  
-end
-
-
-to negotiation
-  
-  let continua-negocio true
-  
-  let flip random 2
-  
-  ifelse (rol = "comprador") AND (flip = 0)
-  [
-    ;Inicia la negociacion el comprador
-    ask interesado [ set mensaje "INIT" set precio-venta precio-compra-ideal]
-    ask interesado [ razona-interesado-vendedor ]
-    
-    while[continua-negocio]
+to move
+  if not ocupado
     [
-      
-      if mensaje = "SUBE"
-      [
-         ask interesado [ set mensaje "SUBO" set precio-venta precio-compra + random 3]
-      ]
-      
-      set continua-negocio false
-      
+      rt random-float 360
+      fd 1
     ]
-    
-  ]
-  [
-    ;Inicia la negociacion el vendedor
-    
-    while[continua-negocio]
-    [
-      
-      ask interesado [ set mensaje "hola comprador" ]
-      ask interesado [ razona-interesado-comprador ]
-      
-      set continua-negocio false
-      
-    ]
-    
-  ] 
-  
-  ; Vuelvo a poner las variables con su estado inicial
-  set ocupado false
-  ask interesado [ set ocupado false ]
-  set mensaje ""
-  ask interesado [ set mensaje "" ]
-  
-  
 end
 
 
@@ -173,7 +418,6 @@ to go
   [
 
     move
-    
     couples
     
   ]
@@ -181,9 +425,9 @@ to go
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-209
+1448
 10
-648
+1887
 470
 16
 16
@@ -225,10 +469,10 @@ NIL
 1
 
 BUTTON
-60
-119
-123
-152
+136
+42
+199
+75
 NIL
 go
 T
@@ -240,6 +484,88 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+25
+138
+493
+427
+Cantidad de tratos-hechos y rechazos
+ticks
+cantidad
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"n_tratos" 1.0 0 -7500403 true "" "plot n_tratos"
+"n_rechazos" 1.0 0 -2674135 true "" "plot n_rechazos"
+
+PLOT
+36
+454
+497
+718
+plot 1
+ticks
+gasto/beneficio
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"gasto del comprador" 1.0 0 -1184463 true "" "plot gasto-comprador"
+"beneficio del vendedor" 1.0 0 -2674135 true "" "plot beneficio-vendedor"
+
+MONITOR
+513
+201
+591
+246
+NIL
+n_tratos
+17
+1
+11
+
+MONITOR
+513
+144
+590
+189
+NIL
+n_rechazos
+17
+1
+11
+
+MONITOR
+507
+455
+620
+500
+NIL
+gasto-comprador
+17
+1
+11
+
+MONITOR
+507
+508
+618
+553
+NIL
+beneficio-vendedor
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
