@@ -1,4 +1,11 @@
-globals [ n_tratos n_rechazos gasto-comprador beneficio-vendedor ]
+globals [ 
+  n_tratos 
+  n_rechazos 
+  gasto_comprador 
+  beneficio_vendedor 
+  acumulado 
+  parte_fija
+  ]
 
 breed [personas persona]
 breed [mercados mercado]
@@ -20,11 +27,6 @@ personas-own [
   precio-venta
   ]
 
-mercados-own [
-  parte-fija 
-  acumulado
-  ]
-
 
 to setup
   
@@ -37,38 +39,37 @@ to setup
   
   set n_tratos 0
   set n_rechazos 0
-  set gasto-comprador 0
-  set beneficio-vendedor 0
+  set gasto_comprador 0
+  set beneficio_vendedor 0
+  set parte_fija 2
   
-  create-personas 1 
+  create-personas 10 
   [
     set color green
     setxy random-pxcor random-pycor
     set rol "comprador"
     set ocupado false 
     set mensaje "" 
-    set precio-compra-ideal 20
-    set precio-compra-permitida 35 
+    set precio-compra-ideal precio_compra_ideal
+    set precio-compra-permitida precio_compra_permitida
     set precio-compra 0
     ]
   
-  create-personas 1
+  create-personas 10
   [
     set color blue 
     setxy random-pxcor random-pycor 
     set rol "vendedor" 
     set ocupado false 
     set mensaje "" 
-    set precio-venta-ideal 40
-    set precio-venta-permitida 25
+    set precio-venta-ideal precio_venta_ideal
+    set precio-venta-permitida precio_venta_permitida
     set precio-venta 0
     ]
 
   create-mercados 1 [
     set color red
     set size 2
-    set parte-fija 2
-    set acumulado 0
     ]
   
 end
@@ -79,9 +80,9 @@ to comprador-razona-precio
   if ( precio-compra >= precio-compra-permitida )
   [
    
-    let coin-flip random 3
+    let coin-flip random 4
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 3 )
     [
       
       ; probabilidad 0.25 de seguir interesado en el producto
@@ -99,13 +100,12 @@ to comprador-razona-precio
     
   ]
   
-  if ( precio-compra >= precio-compra-ideal ) AND 
-  (precio-compra < precio-compra-permitida )
+  if ( precio-compra >= precio-compra-ideal AND precio-compra < precio-compra-permitida )
   [
     
     let coin-flip random 2
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 1 )
     [
       
       ; probabilidad 0.5 de aceptar la oferta del vendedor
@@ -125,9 +125,9 @@ to comprador-razona-precio
   if ( precio-compra < precio-compra-ideal )
   [
     
-    let coin-flip random 3
+    let coin-flip random 4
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 3 )
     [
       ; probabilidad 0.25 de pedirle al vendedor que siga
       ; bajando la oferta
@@ -149,12 +149,12 @@ end
 
 to vendedor-razona-precio
   
-  if ( precio-venta <= precio-venta-permitida )
+  if ( precio-venta < precio-venta-permitida )
   [
     
-    let coin-flip random 3
+    let coin-flip random 4
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 3 )
     [
       
       ; probabilidad 0.25 de seguir interesado
@@ -173,13 +173,12 @@ to vendedor-razona-precio
     
   ]
   
-  if ( precio-venta > precio-venta-permitida ) AND 
-  (precio-venta <= precio-venta-ideal )
+  if ( precio-venta >= precio-venta-permitida AND precio-venta <= precio-venta-ideal )
   [
     
     let coin-flip random 2
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 1 )
     [
       
       ; probabilidad 0.5 de aceptar la oferta del comprador
@@ -199,10 +198,11 @@ to vendedor-razona-precio
   if ( precio-venta > precio-venta-ideal )
   [
     
-    let coin-flip random 3
+    let coin-flip random 4
     
-    ifelse ( coin-flip = 2 )
+    ifelse ( coin-flip = 3 )
     [
+      
       ; probabilidad 0.25 de pedirle al comprador que siga
       ; subiendo la oferta
       ask interesado [ set mensaje "SUBE" ]      
@@ -226,35 +226,29 @@ to negotiation
   
   let coin-flip random 2
   
-  ifelse (rol = "comprador") AND (coin-flip = 0)
+  ifelse (rol = "comprador" AND coin-flip = 1)
   [
     
     ;Inicia la negociacion el comprador
-    set precio-compra precio-compra-ideal
-    
-    ask interesado [ set precio-venta precio-compra ]
+    ask interesado [ set precio-venta [precio-compra-ideal] of myself ]
     ask interesado [ vendedor-razona-precio ]
     
     while[continua-negocio]
     [
       
       if ( mensaje = "SUBE" )
-      [
-        
+      [    
+           
         set coin-flip random 2
         
-        ifelse ( coin-flip = 0 AND [precio-venta] of interesado < precio-compra-permitida )
+        ifelse ( coin-flip = 1 AND [precio-venta] of interesado < precio-compra-permitida )
         [
           
-          print "++ Comprador acepta subir el precio"
-          
-          ask interesado [ set precio-venta precio-venta + random 3 ]
+          ask interesado [ set precio-venta precio-venta + random 2 + 1  ]
           ask interesado [ vendedor-razona-precio ]
           
         ]
         [
-          
-          print "++ Comprador rechaza subir el precio"
           
           set n_rechazos n_rechazos + 1
           
@@ -266,18 +260,12 @@ to negotiation
       
       if ( mensaje = "ACEPTAR" )
       [
-        
-        print "++ Vendedor acepta negocio con comprador"
 
         set n_tratos n_tratos + 1
         
-        let interes [precio-venta] of interesado
-        set interes interes / 100
-        print interes
+        set gasto_comprador gasto_comprador + [precio-venta] of interesado
         
-        ask mercados [ set acumulado ( parte-fija + interes ) ]
-        
-        set gasto-comprador (gasto-comprador + [precio-venta] of interesado )
+        set acumulado acumulado + parte_fija + [precio-venta] of interesado / 100 
         
         set continua-negocio false
         
@@ -285,8 +273,6 @@ to negotiation
       
       if ( mensaje = "RECHAZAR" )
       [
-        
-        print "++ Vendedor rechaza negocio con comprador"
         
         set n_rechazos n_rechazos + 1
         
@@ -299,10 +285,8 @@ to negotiation
   ]
   [
     
-    ;Inicia la negociacion el vendedor
-    set precio-venta precio-venta-ideal
-    
-    ask interesado [ set precio-compra precio-venta ]
+    ;Inicia la negociacion el vendedor    
+    ask interesado [ set precio-compra [precio-venta-ideal] of myself ]
     ask interesado [ comprador-razona-precio ]
     
     while[continua-negocio]
@@ -313,18 +297,14 @@ to negotiation
         
         set coin-flip random 2
         
-        ifelse ( coin-flip = 0 AND [precio-compra] of interesado > precio-venta-permitida )
+        ifelse ( coin-flip = 1 AND [precio-compra] of interesado > precio-venta-permitida )
         [
           
-          print "-- Vendedor acepta bajar el precio"
-          
-          ask interesado [ set precio-compra precio-compra - random 3 ]
+          ask interesado [ set precio-compra precio-compra - random 2 + 1 ]
           ask interesado [ comprador-razona-precio ]
           
         ]
         [
-          
-          print "-- Vendedor rechaza bajar el precio"
           
           set n_rechazos n_rechazos + 1
           
@@ -336,18 +316,12 @@ to negotiation
       
       if ( mensaje = "ACEPTAR" )
       [
-       
-        print "-- Comprador acepta negocio con vendedor"
         
         set n_tratos n_tratos + 1
         
-        let interes [precio-compra] of interesado
-        set interes  interes / 100
-        ;print interes
-        
-        ask mercados [ set acumulado (parte-fija + interes) ]
-        
-        set beneficio-vendedor ( beneficio-vendedor + [precio-compra] of interesado )
+        set beneficio_vendedor beneficio_vendedor + [precio-compra] of interesado
+       
+        set acumulado acumulado + parte_fija + [precio-compra] of interesado / 100
 
         set continua-negocio false
         
@@ -355,8 +329,6 @@ to negotiation
       
       if ( mensaje = "RECHAZAR" )
       [
-        
-        print "-- Comprador rechaza negocio con vendedor"
         
         set n_rechazos n_rechazos + 1
         
@@ -369,9 +341,6 @@ to negotiation
   ] 
   
   ; Las variables vuelven a su estado inicial
-  set ocupado false
-  ask interesado [ set ocupado false ]
-  
   set mensaje ""
   ask interesado [ set mensaje "" ]
   
@@ -387,16 +356,24 @@ end
 to couples
   if ocupado = false
     [
+      
       set interesado one-of (personas-at -1 0)
       if (interesado != NOBODY) and ([ocupado] of interesado = false) and ([rol] of interesado != rol)
       [
+        
         set ocupado true
         ask interesado [set ocupado true set interesado myself]
         
         move-to patch-here
         ask interesado [move-to patch-here]
+        
         negotiation
+        
+        set ocupado false
+        ask interesado [ set ocupado false ]
+        
       ]
+      
     ]
 end
 
@@ -425,10 +402,10 @@ to go
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-1448
-10
-1887
-470
+1103
+46
+1542
+506
 16
 16
 13.0
@@ -520,8 +497,9 @@ true
 true
 "" ""
 PENS
-"gasto del comprador" 1.0 0 -1184463 true "" "plot gasto-comprador"
-"beneficio del vendedor" 1.0 0 -2674135 true "" "plot beneficio-vendedor"
+"gasto del comprador" 1.0 0 -1184463 true "" "plot gasto_comprador"
+"beneficio del vendedor" 1.0 0 -2674135 true "" "plot beneficio_vendedor"
+"acumulado por el mercado" 1.0 0 -7500403 true "" "plot acumulado"
 
 MONITOR
 513
@@ -551,7 +529,7 @@ MONITOR
 620
 500
 NIL
-gasto-comprador
+gasto_comprador
 17
 1
 11
@@ -559,13 +537,84 @@ gasto-comprador
 MONITOR
 507
 508
-618
+630
 553
 NIL
-beneficio-vendedor
+beneficio_vendedor
 17
 1
 11
+
+MONITOR
+508
+567
+701
+612
+NIL
+acumulado
+17
+1
+11
+
+SLIDER
+654
+187
+826
+220
+precio_compra_ideal
+precio_compra_ideal
+0
+100
+50
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+648
+237
+836
+270
+precio_compra_permitida
+precio_compra_permitida
+0
+100
+60
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+655
+94
+827
+127
+precio_venta_ideal
+precio_venta_ideal
+0
+100
+55
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+651
+142
+831
+175
+precio_venta_permitida
+precio_venta_permitida
+0
+100
+52
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
