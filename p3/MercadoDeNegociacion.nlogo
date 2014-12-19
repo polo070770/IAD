@@ -43,7 +43,8 @@ to setup
   set beneficio_vendedor 0
   set parte_fija 2
   
-  create-personas 10 
+  let n_compradores n_personas / 2
+  create-personas n_compradores 
   [
     set color green
     setxy random-pxcor random-pycor
@@ -55,7 +56,8 @@ to setup
     set precio-compra 0
     ]
   
-  create-personas 10
+  let n_vendedores n_personas / 2
+  create-personas n_vendedores
   [
     set color blue 
     setxy random-pxcor random-pycor 
@@ -244,7 +246,7 @@ to negotiation
         ifelse ( coin-flip = 1 AND [precio-venta] of interesado < precio-compra-permitida )
         [
           
-          ask interesado [ set precio-venta precio-venta + random 2 + 1  ]
+          ask interesado [ set precio-venta precio-venta + precio-compra * 0.06  ]
           ask interesado [ vendedor-razona-precio ]
           
         ]
@@ -262,8 +264,9 @@ to negotiation
       [
 
         set n_tratos n_tratos + 1
+
         
-        set gasto_comprador gasto_comprador + [precio-venta] of interesado
+        set gasto_comprador gasto_comprador + 1
         
         set acumulado acumulado + parte_fija + [precio-venta] of interesado / 100 
         
@@ -285,7 +288,7 @@ to negotiation
   ]
   [
     
-    ;Inicia la negociacion el vendedor    
+    ;Inicia la negociacion el vendedor 
     ask interesado [ set precio-compra [precio-venta-ideal] of myself ]
     ask interesado [ comprador-razona-precio ]
     
@@ -300,14 +303,13 @@ to negotiation
         ifelse ( coin-flip = 1 AND [precio-compra] of interesado > precio-venta-permitida )
         [
           
-          ask interesado [ set precio-compra precio-compra - random 2 + 1 ]
+          ask interesado [ set precio-compra precio-compra - precio-compra * 0.06 ]
           ask interesado [ comprador-razona-precio ]
           
         ]
         [
           
           set n_rechazos n_rechazos + 1
-          
           set continua-negocio false
           
         ]
@@ -317,9 +319,9 @@ to negotiation
       if ( mensaje = "ACEPTAR" )
       [
         
-        set n_tratos n_tratos + 1
+        ;set n_tratos n_tratos + 1     
         
-        set beneficio_vendedor beneficio_vendedor + [precio-compra] of interesado
+        set beneficio_vendedor beneficio_vendedor + ( precio-venta-ideal - [precio-compra] of interesado )
        
         set acumulado acumulado + parte_fija + [precio-compra] of interesado / 100
 
@@ -541,7 +543,7 @@ MONITOR
 553
 NIL
 beneficio_vendedor
-17
+2
 1
 11
 
@@ -552,7 +554,7 @@ MONITOR
 612
 NIL
 acumulado
-17
+2
 1
 11
 
@@ -565,7 +567,7 @@ precio_compra_ideal
 precio_compra_ideal
 0
 100
-50
+38
 1
 1
 NIL
@@ -580,7 +582,7 @@ precio_compra_permitida
 precio_compra_permitida
 0
 100
-60
+55
 1
 1
 NIL
@@ -595,7 +597,7 @@ precio_venta_ideal
 precio_venta_ideal
 0
 100
-55
+60
 1
 1
 NIL
@@ -610,7 +612,22 @@ precio_venta_permitida
 precio_venta_permitida
 0
 100
-52
+30
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+658
+51
+830
+84
+n_personas
+n_personas
+0
+250
+50
 1
 1
 NIL
